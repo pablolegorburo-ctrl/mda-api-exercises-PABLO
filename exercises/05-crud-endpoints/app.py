@@ -87,7 +87,7 @@ def problem(request: Request, status: int, title: str, detail: str, **extra) -> 
             "instance": request.url.path, **extra}
     # TODO: Set the media type for problem details (RFC 9457)
     # Hint: 'application/problem+json'
-    return JSONResponse(body, status_code=status, media_type="_____")
+    return JSONResponse(body, status_code=status, media_type="application/problem+json'")
 
 
 # Starlette raises the same HTTPException class for unknown URLs (404) and wrong methods (405),
@@ -103,7 +103,7 @@ def http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
 def validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
     # TODO: Validation failed -> which status code? (the same 422 as the title in the body)
     # Hint: 422 Unprocessable Content
-    return problem(request, _____, "Unprocessable Content", "Request body or parameters are invalid.",
+    return problem(request, 422, "Unprocessable Content", "Request body or parameters are invalid.",
                    errors=jsonable_encoder(exc.errors()))
 
 
@@ -118,7 +118,7 @@ def create_note(data: NoteCreate, request: Request, response: Response) -> Note:
     note = add_note(data.title, data.content)
     # TODO: 201 Created must say WHERE the new note lives, in a response header
     # Hint: the header is called Location; its value is the URL of the new note
-    response.headers["_____"] = str(request.url_for("get_note", note_id=note.id))
+    response.headers["Location"] = str(request.url_for("get_note", note_id=note.id))
     return note
 
 
@@ -129,7 +129,7 @@ def get_note(note_id: int) -> Note:
 
 # TODO: Which method REPLACES a whole resource?
 # Hint: put (lowercase: @app.put). The body is NoteCreate, so title is required (content defaults to "")
-@app._____("/notes/{note_id}")
+@app.put("/notes/{note_id}")
 def replace_note(note_id: int, data: NoteCreate) -> Note:
     note = get_or_404(note_id)
     note.title = data.title
@@ -140,12 +140,12 @@ def replace_note(note_id: int, data: NoteCreate) -> Note:
 
 # TODO: Which method changes only SOME fields of a resource?
 # Hint: patch (lowercase: @app.patch). The body is NoteUpdate: every field is optional
-@app._____("/notes/{note_id}")
+@app.patch("/notes/{note_id}")
 def update_note(note_id: int, data: NoteUpdate) -> Note:
     note = get_or_404(note_id)
     # TODO: Keep only the fields the client really sent (the others stay as they are)
     # Hint: exclude_unset=True  (exclude_none=True makes a null count as "not sent")
-    changes = data.model_dump(_____=True, exclude_none=True)
+    changes = data.model_dump(exclude_unset=True, exclude_none=True)
     for field, value in changes.items():
         setattr(note, field, value)
     note.updated_at = now_iso()
@@ -154,21 +154,21 @@ def update_note(note_id: int, data: NoteUpdate) -> Note:
 
 # TODO: Which method removes a resource? And which status code says "done, nothing to send back"?
 # Hint: delete (lowercase: @app.delete); the decorator's status_code is the same one the function returns below
-@app._____("/notes/{note_id}", status_code=_____)
+@app.delete("/notes/{note_id}", status_code=204)
 def delete_note(note_id: int) -> Response:
     get_or_404(note_id)
     del notes[note_id]
     # TODO: Success, and nothing to send back. Which status code?
     # 204 means NO body, so we return an empty Response instead of a value
     # Hint: 204 No Content
-    return Response(status_code=_____)
+    return Response(status_code=204)
 
 
 # GET /notes comes last: it is the only route with a query parameter
 @app.get("/notes")
 # TODO: Values above 100 must be rejected (422), not clamped. What is the maximum?
 # Hint: le means "less than or equal"; the maximum is 100
-def list_notes(limit: Annotated[int, Query(ge=1, le=_____)] = 20) -> NoteList:
+def list_notes(limit: Annotated[int, Query(ge=1, le=100)] = 20) -> NoteList:
     """List notes, newest first. ?limit= (default 20, between 1 and 100)."""
     newest_first = sorted(notes.values(), key=lambda note: note.id, reverse=True)
     return NoteList(data=newest_first[:limit], page=PageInfo(limit=limit, total=len(notes)))

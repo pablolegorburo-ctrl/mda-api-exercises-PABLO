@@ -172,9 +172,9 @@ def link_header(next_url: str | None, prev_url: str | None) -> str | None:
     # TODO: Set the link relation types (RFC 8288)
     # Hint: 'next' and 'prev'
     if next_url:
-        links.append(f'<{next_url}>; rel="_____"')
+        links.append(f'<{next_url}>; rel="next"')
     if prev_url:
-        links.append(f'<{prev_url}>; rel="_____"')
+        links.append(f'<{prev_url}>; rel="prev"')
     return ", ".join(links) or None
 
 
@@ -183,7 +183,7 @@ def offset_page(request: Request, ordered: list[Note], offset: int, limit: int) 
     total = len(ordered)
     # TODO: Skip `offset` notes and take the next `limit` ones (list slicing)
     # Hint: ordered[offset:offset + limit]
-    data = ordered[_____:_____]
+    data = ordered[offset:offset + limit]
     next_url = page_url(request, offset=offset + limit, limit=limit) if offset + limit < total else None
     # min(offset, total): an offset past the end still gets a prev that points at the last real page
     prev_url = page_url(request, offset=max(min(offset, total) - limit, 0), limit=limit) if offset > 0 else None
@@ -205,7 +205,7 @@ def cursor_page(request: Request, ordered: list[Note], cursor: str | None, limit
     # prev is always None: forward-only. To go back, the client reuses a cursor it already has
     # TODO: Name the field that holds the cursor for the next page
     # Hint: next_cursor
-    return CursorNoteList(data=data, page=CursorPage(mode="cursor", limit=limit, _____=next_cursor,
+    return CursorNoteList(data=data, page=CursorPage(mode="cursor", limit=limit, next_cursor=next_cursor,
                                                      next=next_url, prev=None))
 
 
@@ -215,13 +215,13 @@ def cursor_page(request: Request, ordered: list[Note], cursor: str | None, limit
 
 # TODO: Which method LISTS (reads) a collection?
 # Hint: get (lowercase: @app.get)
-@app._____("/notes")
+@app.get("/notes")
 # TODO: limit must be at least 1 and at most 100: other values are rejected (422), not clamped
 # Hint: ge means "greater than or equal to" (1), le means "less than or equal to" (100)
 def list_notes(
     request: Request,
     response: Response,
-    limit: Annotated[int, Query(ge=_____, le=_____)] = 20,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int | None, Query(ge=0)] = None,
     cursor: Annotated[str | None, Query()] = None,
 ) -> OffsetNoteList | CursorNoteList:
@@ -229,7 +229,7 @@ def list_notes(
     # TODO: offset and cursor are two different strategies: reject requests that mix them
     # Hint: 400 Bad Request
     if offset is not None and cursor is not None:
-        raise HTTPException(status_code=_____, detail="Use either offset or cursor, not both.")
+        raise HTTPException(status_code=400 , detail="Use either offset or cursor, not both.")
 
     ordered = sorted(notes.values(), key=lambda note: note.id, reverse=True)
     if offset is not None:

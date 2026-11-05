@@ -45,7 +45,7 @@ def problem(request: Request, status: int, title: str, detail: str, **extra) -> 
             "instance": request.url.path, **extra}
     # TODO: Set the media type for problem details (RFC 9457)
     # Hint: 'application/problem+json'
-    return JSONResponse(body, status_code=status, media_type="_____")
+    return JSONResponse(body, status_code=status, media_type="application/problem+json'")
 
 
 # Starlette raises the same HTTPException class for unknown URLs (404) and wrong methods (405),
@@ -63,20 +63,20 @@ def http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
 def validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
     # TODO: Validation failed -> which status code? (its reason phrase, "Unprocessable Content", is already the title)
     # Hint: 422 Unprocessable Content
-    return problem(request, _____, "Unprocessable Content", "Request body or parameters are invalid.",
+    return problem(request, 422, "Unprocessable Content", "Request body or parameters are invalid.",
                    errors=jsonable_encoder(exc.errors()))
 
 
 # TODO: Create the health check route
 # Hint: The decorator is named after the HTTP method, in lowercase: GET -> get
-@app._____("/health")
+@app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
 # TODO: Create the route that lists the notes
 # Hint: Use the same method as above; the return annotation list[Note] is the response model
-@app._____("/notes")
+@app.get("/notes")
 def list_notes() -> list[Note]:
     return list(notes.values())
 
